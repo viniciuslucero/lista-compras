@@ -1,12 +1,12 @@
 const CACHE = 'lista-compras-v1';
 const ASSETS = [
-  '/lista-compras/',
-  '/lista-compras/index.html',
-  '/lista-compras/importar.html',
-  '/lista-compras/historico.html',
-  '/lista-compras/js/db.js',
-  '/lista-compras/js/padroes.js',
-  '/lista-compras/js/app.js',
+  '/Lista-de-Compras/',
+  '/Lista-de-Compras/index.html',
+  '/Lista-de-Compras/importar.html',
+  '/Lista-de-Compras/historico.html',
+  '/Lista-de-Compras/js/db.js',
+  '/Lista-de-Compras/js/padroes.js',
+  '/Lista-de-Compras/js/app.js',
 ];
 
 self.addEventListener('install', e => {

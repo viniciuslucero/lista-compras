@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="theme-color" content="#0f0f0f">
-<meta name="apple-mobile-web-app-capable" content="yes">
+
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Lista de Compras</title>
 <link rel="manifest" href="manifest.json">
@@ -192,7 +192,7 @@ let comprasCache = [];
 let ajustesCache = {};
 
 async function init() {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/lista-compras/service-worker.js');
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/Lista-de-Compras/service-worker.js');
 
   const total = await contarCompras();
   if (total === 0) {

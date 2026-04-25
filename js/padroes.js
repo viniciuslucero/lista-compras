@@ -63,7 +63,7 @@ export function gerarListaSemanal(compras, ajustes = []) {
       return {
         descricao: nome,
         vezes: d.vezes,
-        qtde: ajustesMap[nome] ?? Math.round(qtdeMed) || 1,
+        qtde: (ajustesMap[nome] !== undefined ? ajustesMap[nome] : Math.round(qtdeMed) || 1),
         valorUnitario: precomed,
         frequencia: d.vezes >= 5 ? 'semanal' : 'quinzenal',
         categoria: inferirCategoria(nome),
@@ -86,7 +86,7 @@ export function gerarListaMensal(compras, ajustes = []) {
       return {
         descricao: nome,
         vezes: d.vezes,
-        qtde: ajustesMap[nome] ?? Math.round(qtdeMed) || 1,
+        qtde: (ajustesMap[nome] !== undefined ? ajustesMap[nome] : Math.round(qtdeMed) || 1),
         valorUnitario: precomed,
         frequencia: 'mensal',
         categoria: inferirCategoria(nome),
