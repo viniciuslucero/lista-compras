@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Lista de Compras</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --text2: #8a8880;
+    --text3: #555350;
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.1);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.08);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.08);
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* ── Nav ── */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .nav-title { font-size: 15px; font-weight: 500; }
+  .nav-sub { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 1px; }
+  .nav-actions { display: flex; gap: 8px; }
+  .icon-btn { width: 34px; height: 34px; border-radius: 8px; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; text-decoration: none; }
+  .icon-btn:hover { background: var(--surface); color: var(--text); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 0; border-bottom: 0.5px solid var(--border); }
+  .tab { flex: 1; padding: 12px; font-size: 13px; font-weight: 500; text-align: center; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; transition: all .15s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
+  .tab.ativo { color: var(--green); border-bottom-color: var(--green); }
+
+  /* ── Stats ── */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 16px 20px; }
+  .stat { background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .stat-value { font-size: 18px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .stat-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* ── Filtros ── */
+  .filtros { display: flex; gap: 8px; padding: 0 20px 12px; overflow-x: auto; scrollbar-width: none; }
+  .filtros::-webkit-scrollbar { display: none; }
+  .filtro { white-space: nowrap; font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; }
+  .filtro.ativo { background: var(--green-dim); color: var(--green); border-color: rgba(74,222,128,.3); }
+
+  /* ── Lista ── */
+  .lista { padding: 0 20px; }
+  .grupo { margin-bottom: 20px; }
+  .grupo-titulo { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; padding: 8px 0 6px; border-bottom: 0.5px solid var(--border); margin-bottom: 2px; }
+
+  .item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 0.5px solid var(--border); transition: opacity .2s; }
+  .item:last-child { border-bottom: none; }
+  .item.done { opacity: .4; }
+  .item.done .item-nome { text-decoration: line-through; }
+
+  .check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .check:active { transform: scale(.9); }
+  .item.done .check { background: var(--green); border-color: var(--green); }
+
+  .item-info { flex: 1; min-width: 0; }
+  .item-nome { font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-meta { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
+  .badge-s { background: var(--green-dim); color: var(--green); }
+  .badge-q { background: var(--amber-dim); color: var(--amber); }
+  .badge-m { background: var(--blue-dim); color: var(--blue); }
+  .item-vezes { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+  .qtde-ctrl { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .qtde-btn { width: 26px; height: 26px; border-radius: 50%; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: all .15s; font-family: 'DM Sans', sans-serif; }
+  .qtde-btn:hover { background: var(--surface2); color: var(--text); }
+  .qtde-val { font-size: 13px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--text); min-width: 50px; text-align: center; }
+
+  .item-preco { font-size: 12px; color: var(--text3); flex-shrink: 0; min-width: 38px; text-align: right; font-family: 'DM Mono', monospace; }
+
+  /* ── Total ── */
+  .total-bar { position: sticky; bottom: 0; background: var(--bg); border-top: 0.5px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .total-label { font-size: 13px; color: var(--text2); }
+  .total-val { font-size: 20px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--green); }
+
+  /* ── Empty ── */
+  .empty { text-align: center; padding: 60px 20px; }
+  .empty-icon { font-size: 40px; margin-bottom: 16px; }
+  .empty-titulo { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
+  .empty-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
+  .btn-import { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; background: var(--green); color: #0a1a0f; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; text-decoration: none; border: none; cursor: pointer; }
+
+  /* ── Modal WhatsApp ── */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 50; align-items: flex-end; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px 16px 0 0; padding: 20px; width: 100%; max-height: 70vh; display: flex; flex-direction: column; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .modal-titulo { font-size: 15px; font-weight: 500; }
+  .modal-close { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; padding: 4px; }
+  .modal-texto { background: var(--surface2); border-radius: 8px; padding: 14px; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text2); white-space: pre-wrap; overflow-y: auto; flex: 1; margin-bottom: 14px; line-height: 1.7; }
+  .modal-btn { width: 100%; padding: 13px; border-radius: 10px; border: none; background: var(--green); color: #0a1a0f; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; }
+  .modal-btn.copiado { background: var(--surface2); color: var(--text2); }
+
+  /* ── Toast ── */
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--surface); border: 0.5px solid var(--border2); border-radius: 10px; padding: 10px 18px; font-size: 13px; transition: transform .25s; z-index: 99; white-space: nowrap; opacity: 0; }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div>
+    <p class="nav-title">Lista de compras</p>
+    <p class="nav-sub" id="nav-sub">carregando...</p>
+  </div>
+  <div class="nav-actions">
+    <button class="icon-btn" title="Exportar WhatsApp" onclick="abrirWhatsApp()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </button>
+    <a class="icon-btn" href="historico.html" title="Histórico">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </a>
+    <a class="icon-btn" href="importar.html" title="Importar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </a>
+  </div>
+</nav>
+
+<div id="app">
+  <div class="empty" id="empty" style="display:none">
+    <div class="empty-icon">🛒</div>
+    <p class="empty-titulo">Nenhum dado ainda</p>
+    <p class="empty-sub">Importe seu arquivo produtos.csv<br>gerado pelo script de notas fiscais</p>
+    <a class="btn-import" href="importar.html">Importar CSV</a>
+  </div>
+
+  <div id="conteudo" style="display:none">
+    <div class="tabs">
+      <button class="tab ativo" onclick="mudarTab('semanal', this)">Semanal</button>
+      <button class="tab" onclick="mudarTab('mensal', this)">Mensal</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="filtros" id="filtros"></div>
+
+    <div class="lista" id="lista"></div>
+
+    <div class="total-bar">
+      <span class="total-label">Estimativa</span>
+      <span class="total-val" id="total-val">R$ 0</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal WhatsApp -->
+<div class="modal-bg" id="modal-bg" onclick="fecharModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-titulo">Copiar para WhatsApp</span>
+      <button class="modal-close" onclick="fecharModal()">×</button>
+    </div>
+    <div class="modal-texto" id="modal-texto"></div>
+    <button class="modal-btn" id="modal-btn-copiar" onclick="copiarTexto()">Copiar texto</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { listarCompras, contarCompras, salvarAjuste, listarAjustes } from './js/db.js';
+import { gerarListaSemanal, gerarListaMensal, calcularStats } from './js/padroes.js';
+
+const EMOJIS = { Carnes:'🥩', Hortifruti:'🥦', Bebidas:'🥤', 'Laticínios':'🥚', Padaria:'🍞', Limpeza:'🧹', Higiene:'🧴', Outros:'📦' };
+
+let tabAtual = 'semanal';
+let listaAtual = [];
+let qtdes = {};
+let marcados = new Set();
+let catAtiva = 'todos';
+let comprasCache = [];
+let ajustesCache = {};
+
+async function init() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/lista-compras/service-worker.js');
+
+  const total = await contarCompras();
+  if (total === 0) {
+    document.getElementById('empty').style.display = '';
+    return;
+  }
+  document.getElementById('conteudo').style.display = '';
+  comprasCache = await listarCompras();
+  const ajustes = await listarAjustes();
+  for (const a of ajustes) ajustesCache[a.descricao] = a.qtde;
+
+  const stats = calcularStats(comprasCache);
+  document.getElementById('nav-sub').textContent = `${stats.totalNotas} notas · ${stats.primeiraData} – ${stats.ultimaData}`;
+  renderStats(stats);
+  renderLista();
+}
+
+function renderStats(stats) {
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><p class="stat-label">Itens</p><p class="stat-value">${stats.totalItens}</p><p class="stat-sub">registros</p></div>
+    <div class="stat"><p class="stat-label">Notas</p><p class="stat-value">${stats.totalNotas}</p><p class="stat-sub">compras</p></div>
+    <div class="stat"><p class="stat-label">Ticket</p><p class="stat-value">R$${Math.round(stats.ticketMedio)}</p><p class="stat-sub">médio</p></div>
+  `;
+}
+
+function renderLista() {
+  listaAtual = tabAtual === 'semanal'
+    ? gerarListaSemanal(comprasCache, Object.entries(ajustesCache).map(([descricao, qtde]) => ({ descricao, qtde })))
+    : gerarListaMensal(comprasCache, Object.entries(ajustesCache).map(([descricao, qtde]) => ({ descricao, qtde })));
+
+  qtdes = {};
+  for (const item of listaAtual) qtdes[item.descricao] = item.qtde;
+
+  const cats = ['todos', ...new Set(listaAtual.map(i => i.categoria))];
+  const filtrosEl = document.getElementById('filtros');
+  filtrosEl.innerHTML = cats.map(c =>
+    `<button class="filtro ${c === catAtiva ? 'ativo' : ''}" onclick="window.filtrar('${c}', this)">${c === 'todos' ? 'Todos' : (EMOJIS[c] || '') + ' ' + c}</button>`
+  ).join('');
+
+  renderItens();
+}
+
+function renderItens() {
+  const itens = catAtiva === 'todos' ? listaAtual : listaAtual.filter(i => i.categoria === catAtiva);
+  const grupos = {};
+  for (const item of itens) {
+    if (!grupos[item.categoria]) grupos[item.categoria] = [];
+    grupos[item.categoria].push(item);
+  }
+
+  let html = '';
+  for (const [cat, items] of Object.entries(grupos)) {
+    html += `<div class="grupo"><p class="grupo-titulo">${EMOJIS[cat] || ''} ${cat}</p>`;
+    for (const item of items) {
+      const idx = listaAtual.indexOf(item);
+      const q = qtdes[item.descricao];
+      const done = marcados.has(item.descricao);
+      const badgeClass = item.frequencia === 'semanal' ? 'badge-s' : item.frequencia === 'quinzenal' ? 'badge-q' : 'badge-m';
+      html += `
+        <div class="item ${done ? 'done' : ''}" id="item-${idx}">
+          <div class="check" onclick="window.marcar(${idx})">
+            ${done ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#0a1a0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+          </div>
+          <div class="item-info">
+            <p class="item-nome">${item.descricao}</p>
+            <div class="item-meta">
+              <span class="badge ${badgeClass}">${item.frequencia}</span>
+              <span class="item-vezes">${item.vezes}x</span>
+            </div>
+          </div>
+          <div class="qtde-ctrl">
+            <button class="qtde-btn" onclick="window.ajustar(${idx}, -1)">−</button>
+            <span class="qtde-val" id="qtde-${idx}">${q} un</span>
+            <button class="qtde-btn" onclick="window.ajustar(${idx}, +1)">+</button>
+          </div>
+          <span class="item-preco" id="preco-${idx}">R$${Math.round(q * item.valorUnitario)}</span>
+        </div>`;
+    }
+    html += '</div>';
+  }
+  document.getElementById('lista').innerHTML = html;
+  atualizarTotal();
+}
+
+function atualizarTotal() {
+  let soma = 0;
+  for (const item of listaAtual) {
+    if (!marcados.has(item.descricao)) soma += (qtdes[item.descricao] || 0) * item.valorUnitario;
+  }
+  document.getElementById('total-val').textContent = `R$ ${Math.round(soma)}`;
+}
+
+window.marcar = function(idx) {
+  const item = listaAtual[idx];
+  if (marcados.has(item.descricao)) marcados.delete(item.descricao);
+  else marcados.add(item.descricao);
+  const el = document.getElementById(`item-${idx}`);
+  el.classList.toggle('done');
+  const check = el.querySelector('.check');
+  check.innerHTML = marcados.has(item.descricao)
+    ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#0a1a0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '';
+  atualizarTotal();
+};
+
+window.ajustar = async function(idx, delta) {
+  const item = listaAtual[idx];
+  qtdes[item.descricao] = Math.max(0, (qtdes[item.descricao] || 1) + delta);
+  const q = qtdes[item.descricao];
+  document.getElementById(`qtde-${idx}`).textContent = `${q} un`;
+  document.getElementById(`preco-${idx}`).textContent = `R$${Math.round(q * item.valorUnitario)}`;
+  atualizarTotal();
+  await salvarAjuste(item.descricao, q);
+};
+
+window.filtrar = function(cat, btn) {
+  catAtiva = cat;
+  document.querySelectorAll('.filtro').forEach(f => f.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderItens();
+};
+
+window.mudarTab = function(tab, btn) {
+  tabAtual = tab;
+  marcados.clear();
+  catAtiva = 'todos';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderLista();
+};
+
+window.abrirWhatsApp = function() {
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const titulo = tabAtual === 'semanal' ? 'Compra semanal' : 'Compra mensal';
+  let texto = `*${titulo} — ${hoje}*\n\n`;
+  let cat = '';
+  for (const item of listaAtual) {
+    if (item.categoria !== cat) {
+      cat = item.categoria;
+      texto += `\n${EMOJIS[cat] || ''} *${cat}*\n`;
+    }
+    const q = qtdes[item.descricao];
+    const done = marcados.has(item.descricao);
+    texto += `${done ? '✅' : '☐'} ${item.descricao} — ${q} un\n`;
+  }
+  const soma = listaAtual.reduce((s, i) => marcados.has(i.descricao) ? s : s + (qtdes[i.descricao] || 0) * i.valorUnitario, 0);
+  texto += `\n💰 *Estimativa: R$ ${Math.round(soma)}*`;
+  document.getElementById('modal-texto').textContent = texto;
+  document.getElementById('modal-btn-copiar').textContent = 'Copiar texto';
+  document.getElementById('modal-btn-copiar').classList.remove('copiado');
+  document.getElementById('modal-bg').classList.add('open');
+};
+
+window.fecharModal = function(e) {
+  if (!e || e.target === document.getElementById('modal-bg')) {
+    document.getElementById('modal-bg').classList.remove('open');
+  }
+};
+
+window.copiarTexto = function() {
+  const texto = document.getElementById('modal-texto').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('modal-btn-copiar');
+    btn.textContent = 'Copiado!';
+    btn.classList.add('copiado');
+    setTimeout(() => { btn.textContent = 'Copiar texto'; btn.classList.remove('copiado'); }, 2500);
+  });
+};
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+init();
+</script>
+</body>
+</html>

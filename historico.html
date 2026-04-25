@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f0f0f">
+<title>Histórico · Lista de Compras</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8; --text2: #8a8880; --text3: #555350;
+    --green: #4ade80; --green-dim: rgba(74,222,128,0.1);
+    --amber: #fbbf24; --blue: #60a5fa;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+  nav { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  nav a { color: var(--text2); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  nav a:hover { color: var(--text); }
+  nav h1 { font-size: 15px; font-weight: 500; }
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+  .section-title { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; margin-top: 24px; }
+  .section-title:first-child { margin-top: 0; }
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .card { background: var(--surface); border-radius: 10px; padding: 14px 16px; }
+  .card-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .card-value { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .card-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .rank-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-pos { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; min-width: 20px; }
+  .rank-info { flex: 1; min-width: 0; }
+  .rank-nome { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank-sub { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .rank-bar-wrap { width: 80px; flex-shrink: 0; }
+  .rank-bar { height: 3px; background: var(--surface2); border-radius: 2px; }
+  .rank-fill { height: 100%; background: var(--green); border-radius: 2px; }
+  .rank-val { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; text-align: right; margin-top: 3px; }
+  .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .cat-card { background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+  .cat-nome { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .cat-val { font-size: 18px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--green); }
+  .cat-pct { font-size: 11px; color: var(--text3); margin-top: 2px; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Voltar
+  </a>
+  <h1>Histórico</h1>
+</nav>
+<main>
+  <div id="conteudo"></div>
+</main>
+<script type="module">
+import { listarCompras } from './js/db.js';
+import { calcularStats, calcularPadroes, inferirCategoria } from './js/padroes.js';
+
+const EMOJIS = { Carnes:'🥩', Hortifruti:'🥦', Bebidas:'🥤', 'Laticínios':'🥚', Padaria:'🍞', Limpeza:'🧹', Higiene:'🧴', Outros:'📦' };
+
+async function init() {
+  const compras = await listarCompras();
+  if (!compras.length) {
+    document.getElementById('conteudo').innerHTML = '<p style="color:var(--text3);text-align:center;padding:60px 0">Nenhum dado importado ainda.</p>';
+    return;
+  }
+
+  const stats = calcularStats(compras);
+  const { semanal, mensal } = calcularPadroes(compras);
+
+  // Top produtos (união semanal + mensal)
+  const todos = {};
+  for (const [nome, d] of Object.entries({ ...semanal, ...mensal })) {
+    if (!todos[nome]) todos[nome] = { vezes: 0, valor: 0 };
+    todos[nome].vezes += d.vezes;
+    todos[nome].valor += d.valorTotal;
+  }
+  const ranking = Object.entries(todos).sort((a, b) => b[1].vezes - a[1].vezes).slice(0, 15);
+  const maxVezes = ranking[0]?.[1].vezes || 1;
+
+  // Gastos por categoria
+  const porCat = {};
+  for (const c of compras) {
+    const cat = inferirCategoria(c.descricao || '');
+    const v = parseFloat((c.valor_total_item || '').replace(',', '.')) || 0;
+    if (!porCat[cat]) porCat[cat] = 0;
+    porCat[cat] += v;
+  }
+  const totalCat = Object.values(porCat).reduce((a, b) => a + b, 0);
+  const catsOrdenadas = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
+
+  document.getElementById('conteudo').innerHTML = `
+    <p class="section-title">Resumo geral</p>
+    <div class="cards">
+      <div class="card"><p class="card-label">Total gasto</p><p class="card-value">R$${Number(stats.totalGasto).toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0})}</p><p class="card-sub">${stats.primeiraData} – ${stats.ultimaData}</p></div>
+      <div class="card"><p class="card-label">Ticket médio</p><p class="card-value">R$${Math.round(stats.ticketMedio)}</p><p class="card-sub">por visita</p></div>
+      <div class="card"><p class="card-label">Notas</p><p class="card-value">${stats.totalNotas}</p><p class="card-sub">compras registradas</p></div>
+      <div class="card"><p class="card-label">Produtos</p><p class="card-value">${ranking.length}+</p><p class="card-sub">itens diferentes</p></div>
+    </div>
+
+    <p class="section-title">Produtos mais frequentes</p>
+    <div>
+      ${ranking.map(([nome, d], i) => `
+        <div class="rank-item">
+          <span class="rank-pos">${i + 1}</span>
+          <div class="rank-info">
+            <p class="rank-nome">${nome}</p>
+            <p class="rank-sub">${inferirCategoria(nome)}</p>
+          </div>
+          <div class="rank-bar-wrap">
+            <div class="rank-bar"><div class="rank-fill" style="width:${Math.round(d.vezes/maxVezes*100)}%"></div></div>
+            <p class="rank-val">${d.vezes}x</p>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <p class="section-title">Gastos por categoria</p>
+    <div class="cat-grid">
+      ${catsOrdenadas.map(([cat, val]) => `
+        <div class="cat-card">
+          <p class="cat-nome">${EMOJIS[cat] || ''} ${cat}</p>
+          <p class="cat-val">R$${Math.round(val)}</p>
+          <p class="cat-pct">${Math.round(val/totalCat*100)}% do total</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+init();
+</script>
+</body>
+</html>

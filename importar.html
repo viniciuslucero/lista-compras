@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f0f0f">
+<title>Importar · Lista de Compras</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --text2: #8a8880;
+    --text3: #555350;
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.12);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.1);
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+
+  .page { min-height: 100%; display: flex; flex-direction: column; }
+
+  /* Nav */
+  nav { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 0.5px solid var(--border); }
+  nav a { color: var(--text2); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  nav a:hover { color: var(--text); }
+  nav h1 { font-size: 15px; font-weight: 500; color: var(--text); }
+
+  /* Main */
+  main { flex: 1; padding: 24px 20px; max-width: 560px; margin: 0 auto; width: 100%; }
+
+  .section-title { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+
+  /* Status card */
+  .status-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 14px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.vazio { background: var(--text3); }
+  .status-dot.ok { background: var(--green); }
+  .status-info { flex: 1; }
+  .status-titulo { font-size: 14px; font-weight: 500; }
+  .status-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .status-action { font-size: 12px; color: var(--red); cursor: pointer; border: none; background: none; font-family: inherit; padding: 4px 10px; border-radius: 6px; border: 0.5px solid rgba(248,113,113,0.3); }
+  .status-action:hover { background: var(--red-dim); }
+
+  /* Drop zone */
+  .drop-zone { border: 1.5px dashed var(--border2); border-radius: 14px; padding: 40px 24px; text-align: center; cursor: pointer; transition: all .2s; position: relative; margin-bottom: 24px; }
+  .drop-zone:hover, .drop-zone.over { border-color: var(--green); background: var(--green-dim); }
+  .drop-icon { font-size: 32px; margin-bottom: 12px; }
+  .drop-title { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+  .drop-sub { font-size: 13px; color: var(--text2); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .drop-hint { font-size: 11px; color: var(--text3); margin-top: 10px; font-family: 'DM Mono', monospace; }
+
+  /* Progress */
+  .progress-wrap { display: none; margin-bottom: 24px; }
+  .progress-bar { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width .3s; }
+  .progress-label { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  /* Preview */
+  .preview { display: none; background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+  .preview-header { padding: 14px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .preview-titulo { font-size: 13px; font-weight: 500; }
+  .preview-count { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .preview-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .preview-row:last-child { border-bottom: none; }
+  .preview-nome { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+  .preview-data { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  /* Btn */
+  .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all .15s; }
+  .btn-primary { background: var(--green); color: #0a1a0f; }
+  .btn-primary:hover { opacity: .88; }
+  .btn-primary:disabled { background: var(--surface2); color: var(--text3); cursor: not-allowed; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface); border: 0.5px solid var(--border2); border-radius: 10px; padding: 12px 20px; font-size: 13px; transition: transform .3s; z-index: 99; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(74,222,128,.4); color: var(--green); }
+  .toast.error { border-color: rgba(248,113,113,.4); color: var(--red); }
+</style>
+</head>
+<body>
+<div class="page">
+  <nav>
+    <a href="index.html">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Voltar
+    </a>
+    <h1>Importar dados</h1>
+  </nav>
+
+  <main>
+    <p class="section-title">Status atual</p>
+    <div class="status-card" id="status-card">
+      <div class="status-dot vazio" id="status-dot"></div>
+      <div class="status-info">
+        <p class="status-titulo" id="status-titulo">Nenhum dado importado</p>
+        <p class="status-sub" id="status-sub">Importe o produtos.csv para começar</p>
+      </div>
+      <button class="status-action" id="btn-limpar" style="display:none" onclick="limparDados()">Limpar</button>
+    </div>
+
+    <p class="section-title">Importar arquivo</p>
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" accept=".csv" id="file-input" onchange="onFileSelect(this.files[0])">
+      <div class="drop-icon">📄</div>
+      <p class="drop-title">Solte o arquivo aqui</p>
+      <p class="drop-sub">ou toque para selecionar</p>
+      <p class="drop-hint">produtos.csv · gerado pelo selenium_nfe.py</p>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <p class="progress-label" id="progress-label">Lendo arquivo...</p>
+    </div>
+
+    <div class="preview" id="preview">
+      <div class="preview-header">
+        <span class="preview-titulo">Prévia dos dados</span>
+        <span class="preview-count" id="preview-count"></span>
+      </div>
+      <div id="preview-rows"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-importar" disabled onclick="importar()">Importar dados</button>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { salvarCompras, contarCompras, limparCompras } from './js/db.js';
+import { parsearCSV } from './js/padroes.js';
+
+let dadosPendentes = [];
+
+async function atualizarStatus() {
+  const total = await contarCompras();
+  const dot = document.getElementById('status-dot');
+  const titulo = document.getElementById('status-titulo');
+  const sub = document.getElementById('status-sub');
+  const btnLimpar = document.getElementById('btn-limpar');
+  if (total > 0) {
+    dot.className = 'status-dot ok';
+    titulo.textContent = `${total} itens importados`;
+    sub.textContent = 'Dados prontos para gerar sua lista';
+    btnLimpar.style.display = '';
+  } else {
+    dot.className = 'status-dot vazio';
+    titulo.textContent = 'Nenhum dado importado';
+    sub.textContent = 'Importe o produtos.csv para começar';
+    btnLimpar.style.display = 'none';
+  }
+}
+
+window.onFileSelect = function(file) {
+  if (!file) return;
+  const pw = document.getElementById('progress-wrap');
+  const pf = document.getElementById('progress-fill');
+  const pl = document.getElementById('progress-label');
+  pw.style.display = '';
+  pf.style.width = '30%';
+  pl.textContent = 'Lendo arquivo...';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    pf.style.width = '70%';
+    pl.textContent = 'Processando...';
+    setTimeout(() => {
+      dadosPendentes = parsearCSV(e.target.result);
+      pf.style.width = '100%';
+      pl.textContent = `${dadosPendentes.length} itens encontrados`;
+
+      const preview = document.getElementById('preview');
+      const rows = document.getElementById('preview-rows');
+      const count = document.getElementById('preview-count');
+      preview.style.display = '';
+      count.textContent = `${dadosPendentes.length} itens`;
+      rows.innerHTML = dadosPendentes.slice(0, 5).map(i =>
+        `<div class="preview-row">
+          <span class="preview-nome">${i.descricao}</span>
+          <span class="preview-data">${i.data}</span>
+        </div>`
+      ).join('') + (dadosPendentes.length > 5 ? `<div class="preview-row"><span style="color:var(--text3);font-size:12px">+ ${dadosPendentes.length - 5} itens...</span></div>` : '');
+
+      document.getElementById('btn-importar').disabled = dadosPendentes.length === 0;
+    }, 300);
+  };
+  reader.readAsText(file, 'utf-8');
+};
+
+window.importar = async function() {
+  if (!dadosPendentes.length) return;
+  const btn = document.getElementById('btn-importar');
+  btn.disabled = true;
+  btn.textContent = 'Importando...';
+  try {
+    await salvarCompras(dadosPendentes);
+    mostrarToast('Dados importados com sucesso!', 'success');
+    await atualizarStatus();
+    dadosPendentes = [];
+    document.getElementById('preview').style.display = 'none';
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('file-input').value = '';
+    setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+  } catch (err) {
+    mostrarToast('Erro ao importar. Tente novamente.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Importar dados';
+  }
+};
+
+window.limparDados = async function() {
+  if (!confirm('Apagar todos os dados importados?')) return;
+  await limparCompras();
+  await atualizarStatus();
+  mostrarToast('Dados apagados.', 'success');
+};
+
+function mostrarToast(msg, tipo = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${tipo} show`;
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Drag and drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); window.onFileSelect(e.dataTransfer.files[0]); });
+
+atualizarStatus();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/lista-compras/service-worker.js');
+</script>
+</body>
+</html>
